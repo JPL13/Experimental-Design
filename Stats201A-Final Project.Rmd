@@ -1,0 +1,101 @@
+---
+title: "Stats201A-project"
+author: "Juan Piao"
+date: "11/20/2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(FrF2)
+```
+
+```{r, message=FALSE}
+library(readr)
+data <- read_csv("~/Downloads/201A_experiment_data_final.csv")
+data<-data[, -c(7, 8)]
+names(data) <-c(LETTERS[1:6], "max_score")
+```
+
+A: "is_black_and_white"
+B: "has_background"     
+C: "is_bright"         
+D: "has_sticker"       
+E: "has_tree"           
+F: "has_noise"          
+
+
+### Full model and the effects estimates
+
+```{r}
+data_lm<- lm(max_score~ .^6, data=data)
+#summary(data_lm)
+2*coef(data_lm)[-1]
+```
+
+## Half normal plot
+```{r}
+DanielPlot(data_lm, half = T)
+```
+
+## Another half normal plot using package "unrepx"
+```{r}
+library(unrepx)
+hnplot(2*coef(data_lm)[-1], ref=TRUE, half = TRUE, ID = ME(2*coef(data_lm)[-1]))
+```
+
+### Pareto plot of effects
+```{r}
+parplot(2*coef(data_lm)[-1])
+```
+
+```{r}
+source("http://www.stat.ucla.edu/~hqxu/stat201A/R/halfnormal.R")
+#par(mfrow=c(1,2))
+halfnormalplot(2*coef(data_lm)[-1], label=T, n=3, main = "Half normal plot")
+```
+
+
+## second degree model
+
+```{r}
+data_lm2<-lm( max_score~ .^2, data)
+summary(data_lm2)
+```
+
+The significant effects are : A, C, D, E, A:B, A:F, B:C, B:F, D:E
+
+
+
+
+```{r}
+data_lm3<-lm( max_score ~ A + C + D + E + A:B + A:F + B:C + B:F + D:E , data)
+#summary(data_lm3)
+
+# set the fitted values to 0, if the fitted values < 0.5 
+data_lm3$fitted.values=replace(data_lm3$fitted.values, data_lm3$fitted.values<0.5, 0)
+
+#update the residuals
+data_lm3$residuals = data$max_score- data_lm3$fitted.values
+
+plot(data_lm3$residuals~data_lm3$fitted.values)
+
+summary(data_lm3)
+
+```
+
+
+```{r}
+plot(data_lm3)
+```
+
+### The Residual ~ Fitted model
+
+```{r}
+summary(lm(data_lm3$residuals~ data_lm3$fitted.values))
+plot(lm(data_lm3$residuals~ data_lm3$fitted.values))
+```
+
+
+
+
